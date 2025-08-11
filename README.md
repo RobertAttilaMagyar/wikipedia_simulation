@@ -1,0 +1,1 @@
+# Simulation of the Bipartite Network of Wikipedia
