@@ -15,7 +15,6 @@
 
 #include <map>
 
-
 #define CHECK(cond, msg)                                    \
     do                                                      \
     {                                                       \
@@ -32,7 +31,7 @@ namespace wikipedia
     class Network;
 
     using KnowledgeState = std::vector<std::optional<double>>;
-    using NodePairs = std::map<Editor*, Article*>;
+    using NodePairs = std::map<Editor *, Article *>;
 
     class Node
     {
@@ -47,7 +46,7 @@ namespace wikipedia
         bool knowsDomain(size_t i);
         bool knowsDomain(size_t i) const;
         const uint32_t getId();
-        const uint32_t getId() const ;
+        const uint32_t getId() const;
 
         size_t dimensions;
 
@@ -105,9 +104,17 @@ namespace wikipedia
         template <class T>
         const std::vector<T *> &getNodes() const;
 
-        NodePairs getPairs() const;
+        void getPairs();
+
+        const NodePairs adjacency();
+        NodePairs adjacency() const;
+
+        void clearConnections();
+
+        void updateArticles();
 
     private:
+        NodePairs connections;
         size_t dimensions;
         std::vector<Article *> articles;
         std::vector<Editor *> editors;

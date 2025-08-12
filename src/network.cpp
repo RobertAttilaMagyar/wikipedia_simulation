@@ -164,9 +164,11 @@ Network::Network(size_t dimensions, uint32_t numEditors, uint32_t numArticles)
         this->addNode<Article>();
 }
 
-NodePairs Network::getPairs() const
+void Network::getPairs()
 {
-    NodePairs pairs;
+    if(!connections.empty())
+        connections.clear();
+
     for (auto ed : editors)
     {
         std::vector<double> weights(articles.size());
@@ -182,9 +184,29 @@ NodePairs Network::getPairs() const
 
         Article* art = articles.at(dist(gen));
         spdlog::debug("Editor-{} is paired to Article-{}", ed->getId(), art->getId());
-        pairs.insert({ed, art});
+        connections.insert({ed, art});
     }
+}
 
+const NodePairs Network::adjacency()
+{
+    return connections;
+}
 
-    return pairs;
+NodePairs Network::adjacency() const
+{
+    return connections;
+}
+
+void Network::clearConnections()
+{
+    connections.clear();
+}
+
+void Network::updateArticles()
+{
+    for(auto& [editor, article] : connections)
+    {
+        article->update(editor);
+    }
 }
