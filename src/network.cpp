@@ -4,6 +4,8 @@ using namespace wikipedia;
 
 uint32_t Node::nextId = 0;
 
+double Node::prob = 0.2;
+
 double Node::getDomain(size_t i)
 {
     CHECK(state.at(i).has_value(), "Unknown state accessed");
@@ -160,4 +162,29 @@ Network::Network(size_t dimensions, uint32_t numEditors, uint32_t numArticles)
         this->addNode<Editor>();
     while (numArticles--)
         this->addNode<Article>();
+}
+
+NodePairs Network::getPairs() const
+{
+    NodePairs pairs;
+    for (auto ed : editors)
+    {
+        std::vector<double> weights(articles.size());
+        std::transform(articles.begin(), articles.end(), weights.begin(), [ed](Article *art)
+                       { return ed->contributionMeasure(art); });
+        if(std::accumulate(weights.begin(), weights.end(), 0.0) == 0)
+        {
+            spdlog::debug("Editor-{} cannot contribute to any Articles in the network.", ed->getId());
+            continue;
+        }
+        auto& gen = rng::getEngine();
+        std::discrete_distribution<> dist(weights.begin(), weights.end());
+
+        Article* art = articles.at(dist(gen));
+        spdlog::debug("Editor-{} is paired to Article-{}", ed->getId(), art->getId());
+        pairs.insert({ed, art});
+    }
+
+
+    return pairs;
 }

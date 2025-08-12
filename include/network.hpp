@@ -13,6 +13,7 @@
 
 #include <iostream>
 
+#include <map>
 
 
 #define CHECK(cond, msg)                                    \
@@ -31,6 +32,7 @@ namespace wikipedia
     class Network;
 
     using KnowledgeState = std::vector<std::optional<double>>;
+    using NodePairs = std::map<Editor*, Article*>;
 
     class Node
     {
@@ -57,7 +59,7 @@ namespace wikipedia
     protected:
         KnowledgeState state;
 
-        double prob = 0.2;
+        static double prob;
         Node(size_t dimensions);
     };
 
@@ -102,6 +104,8 @@ namespace wikipedia
 
         template <class T>
         const std::vector<T *> &getNodes() const;
+
+        NodePairs getPairs() const;
 
     private:
         size_t dimensions;
