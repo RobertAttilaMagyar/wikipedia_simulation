@@ -1,9 +1,5 @@
 #include "network.hpp"
 
-#include <spdlog/spdlog.h>
-
-#include <iostream>
-
 using namespace wikipedia;
 
 uint32_t Node::nextId = 0;
@@ -20,6 +16,16 @@ const double Node::getDomain(size_t i) const
     return state.at(i).value();
 }
 
+bool Node::knowsDomain(size_t i)
+{
+    return state.at(i).has_value();
+}
+
+bool Node::knowsDomain(size_t i) const
+{
+    return state.at(i).has_value();
+}
+
 Node::Node(size_t dimensions)
     : rng(std::random_device{}()), dimensions(dimensions)
 {
@@ -32,9 +38,9 @@ void Node::binomialKnownFields(double p)
 {
     std::uniform_real_distribution<double> dist(0, 1);
     auto &gen = rng::getEngine();
-    for(size_t i = 0; i < dimensions; i++)
+    for (size_t i = 0; i < dimensions; i++)
     {
-        if(dist(gen) < p)
+        if (dist(gen) < p)
         {
             state[i] = std::make_optional(0.0);
         }
@@ -56,11 +62,12 @@ Article::Article(size_t dimensions)
 {
     knowledgeLimits.resize(state.size(), std::nullopt);
 
-    std::uniform_real_distribution<double> dist(0,1);
-    auto& gen = rng::getEngine();
-    for(size_t i = 0; i < state.size(); i++)
+    std::uniform_real_distribution<double> dist(0, 1);
+    auto &gen = rng::getEngine();
+    for (size_t i = 0; i < state.size(); i++)
     {
-        if(state[i].has_value()) knowledgeLimits[i] = std::make_optional(dist(gen));
+        if (state[i].has_value())
+            knowledgeLimits[i] = std::make_optional(dist(gen));
     }
 }
 
@@ -75,7 +82,21 @@ Article *Article::create(Network *network, size_t dimensions)
 bool Article::update(const Editor *editor)
 {
     spdlog::debug("Updating Article-{} with Editor-{}", this->getId(), editor->getId());
-    return false;
+    std::vector<double> knowledgeDiffs = editor->getKnowledgeDiffs(this);
+
+    double diffSum = std::accumulate(knowledgeDiffs.begin(), knowledgeDiffs.end(), 0.0);
+    if (diffSum == 0.0)
+    {
+        spdlog::debug("Editor-{} cannot update Article-{}");
+        return false;
+    }
+
+    std::discrete_distribution<> dist(knowledgeDiffs.begin(), knowledgeDiffs.end());
+    std::uniform_real_distribution<double> udist(0.0,1.0);
+    auto& gen = rng::getEngine();
+    size_t index = dist(gen);
+    state.at(index) = (state.at(index).value() + std::min(knowledgeLimits.at(index).value(), udist(gen) * (knowledgeDiffs.at(index))));
+    return true;
 }
 
 Editor::Editor(size_t dimensions)
@@ -85,10 +106,32 @@ Editor::Editor(size_t dimensions)
     std::uniform_real_distribution<double> dist(0, 1);
     auto &gen = rng::getEngine();
 
-    for(auto& s: state){
-        if(s.has_value()) s = std::make_optional(dist(gen));
+    for (auto &s : state)
+    {
+        if (s.has_value())
+            s = std::make_optional(dist(gen));
+    }
+}
+
+std::vector<double> Editor::getKnowledgeDiffs(const Article *article) const
+{
+    std::vector<double> knowledgeDiffs(state.size(), 0.0);
+    for (size_t i = 0; i < state.size(); i++)
+    {
+        if (article->knowsDomain(i) && this->knowsDomain(i))
+        {
+            knowledgeDiffs.at(i) = std::max((this->getDomain(i) - article->getDomain(i)), 0.0);
+        }
     }
 
+    return knowledgeDiffs;
+}
+
+double Editor::contributionMeasure(const Article *article) const
+{
+    auto knowledgeDiffs = getKnowledgeDiffs(article);
+
+    return std::accumulate(knowledgeDiffs.begin(), knowledgeDiffs.end(), 0.0);
 }
 
 Editor *Editor::create(Network *network, size_t dimensions)

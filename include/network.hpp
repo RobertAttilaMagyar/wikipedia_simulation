@@ -2,15 +2,18 @@
 #include <array>
 #include <vector>
 #include <cstdint>
-#include <memory>
 #include <cstddef>
-#include <span>
 #include <rng.hpp>
 #include <stdexcept>
-#include <map>
 #include <optional>
 
 #include <algorithm>
+
+#include <spdlog/spdlog.h>
+
+#include <iostream>
+
+
 
 #define CHECK(cond, msg)                                    \
     do                                                      \
@@ -27,6 +30,8 @@ namespace wikipedia
     class Editor;
     class Network;
 
+    using KnowledgeState = std::vector<std::optional<double>>;
+
     class Node
     {
         static uint32_t nextId;
@@ -37,6 +42,8 @@ namespace wikipedia
     public:
         double getDomain(size_t i);
         const double getDomain(size_t i) const;
+        bool knowsDomain(size_t i);
+        bool knowsDomain(size_t i) const;
         const uint32_t getId();
         const uint32_t getId() const ;
 
@@ -48,7 +55,7 @@ namespace wikipedia
         void binomialKnownFields(double p);
 
     protected:
-        std::vector<std::optional<double>> state;
+        KnowledgeState state;
 
         double prob = 0.2;
         Node(size_t dimensions);
@@ -63,13 +70,15 @@ namespace wikipedia
         ~Article() = default;
 
     private:
-        std::vector<std::optional<double>> knowledgeLimits;
+        KnowledgeState knowledgeLimits;
         explicit Article(size_t dimensions);
     };
 
     class Editor : public Node
     {
     public:
+        std::vector<double> getKnowledgeDiffs(const Article *article) const;
+        double contributionMeasure(const Article *article) const;
         static Editor *create(Network *network, size_t dimensions);
         ~Editor() = default;
 
