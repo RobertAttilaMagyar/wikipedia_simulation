@@ -8,6 +8,7 @@
 #include <rng.hpp>
 #include <stdexcept>
 #include <map>
+#include <optional>
 
 #include <algorithm>
 
@@ -36,22 +37,18 @@ namespace wikipedia
     public:
         double getDomain(size_t i);
         const double getDomain(size_t i) const;
-        int getId();
+        const uint32_t getId();
+        const uint32_t getId() const ;
 
-        uint64_t getKnownFields();
-        const uint64_t getKnownFields() const;
-
-        const std::map<size_t, double> &getKnowledge();
         size_t dimensions;
 
     private:
         std::mt19937 rng;
-        int id;
-        uint64_t binomialKnownFields(double p);
+        uint32_t id;
+        void binomialKnownFields(double p);
 
     protected:
-        std::map<size_t, double> knowledge;
-        uint64_t knownFields;
+        std::vector<std::optional<double>> state;
 
         double prob = 0.2;
         Node(size_t dimensions);
@@ -66,7 +63,7 @@ namespace wikipedia
         ~Article() = default;
 
     private:
-        std::map<size_t, double> knowledgeLimits;
+        std::vector<std::optional<double>> knowledgeLimits;
         explicit Article(size_t dimensions);
     };
 

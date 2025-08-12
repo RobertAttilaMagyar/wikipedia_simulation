@@ -1,5 +1,7 @@
 #include "network.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <iostream>
 
 using namespace wikipedia;
@@ -8,52 +10,43 @@ uint32_t Node::nextId = 0;
 
 double Node::getDomain(size_t i)
 {
-    return knowledge.at(i);
+    CHECK(state.at(i).has_value(), "Unknown state accessed");
+    return state.at(i).value();
 };
 
 const double Node::getDomain(size_t i) const
 {
-    return knowledge.at(i);
+    CHECK(state.at(i).has_value(), "Unknown state accessed");
+    return state.at(i).value();
 }
 
 Node::Node(size_t dimensions)
     : rng(std::random_device{}()), dimensions(dimensions)
 {
-    CHECK(dimensions <= 64, "Maximum number of dimensions should be <=64");
     id = nextId++;
+    state.resize(dimensions, std::nullopt);
     binomialKnownFields(prob);
 }
 
-const std::map<size_t, double> &Node::getKnowledge()
+void Node::binomialKnownFields(double p)
 {
-    return knowledge;
-}
-
-uint64_t Node::getKnownFields()
-{
-    return knownFields;
-}
-
-const uint64_t Node::getKnownFields() const
-{
-    return knownFields;
-}
-
-uint64_t Node::binomialKnownFields(double p)
-{
-    size_t dims = dimensions;
     std::uniform_real_distribution<double> dist(0, 1);
-
     auto &gen = rng::getEngine();
-    while (dims--)
+    for(size_t i = 0; i < dimensions; i++)
     {
-        knownFields |= static_cast<uint64_t>(dist(gen) < p) << dims;
+        if(dist(gen) < p)
+        {
+            state[i] = std::make_optional(0.0);
+        }
     }
-
-    return knownFields;
 }
 
-int Node::getId()
+const uint32_t Node::getId()
+{
+    return id;
+}
+
+const uint32_t Node::getId() const
 {
     return id;
 }
@@ -61,61 +54,28 @@ int Node::getId()
 Article::Article(size_t dimensions)
     : Node(dimensions)
 {
+    knowledgeLimits.resize(state.size(), std::nullopt);
+
     std::uniform_real_distribution<double> dist(0,1);
     auto& gen = rng::getEngine();
-    uint64_t kf = this->getKnownFields();
-    size_t counter = 0;
-
-    while (kf)
+    for(size_t i = 0; i < state.size(); i++)
     {
-        if (!(kf & 0x1))
-        {
-            knowledge[counter] = 0.0;
-            knowledgeLimits[counter] = dist(gen);
-        }
-        counter++;
-        kf >>= 1;
+        if(state[i].has_value()) knowledgeLimits[i] = std::make_optional(dist(gen));
     }
 }
 
 Article *Article::create(Network *network, size_t dimensions)
 {
     auto ptr = std::unique_ptr<Article>(new Article(dimensions));
+    spdlog::debug("Adding Article (id: {}) to network", ptr->getId());
     network->articles.push_back(ptr.get());
     return ptr.release();
 }
 
 bool Article::update(const Editor *editor)
 {
-    // Still not that right, needs more work.
-
-    const uint64_t kf1 = this->getKnownFields();
-    const uint64_t kf2 = editor->getKnownFields();
-    uint64_t commonFields = kf1 & kf2;
-    if (!commonFields)
-        return false;
-
-    size_t counter = 0;
-
-    std::uniform_real_distribution<double> dist(0, 1);
-    auto &gen = rng::getEngine();
-
-    while (commonFields)
-    {
-        if (commonFields & 0x1)
-        {
-            double articleValue = this->getDomain(counter);
-            double editorValue = editor->getDomain(counter);
-
-            double diff = editorValue - articleValue;
-            knowledge[counter] += dist(gen) * std::max(diff, 0.0);
-            knowledge[counter] = std::min(knowledgeLimits[counter], knowledge[counter]);
-        }
-        counter++;
-        commonFields >>= 1;
-    }
-
-    return true;
+    spdlog::debug("Updating Article-{} with Editor-{}", this->getId(), editor->getId());
+    return false;
 }
 
 Editor::Editor(size_t dimensions)
@@ -125,20 +85,16 @@ Editor::Editor(size_t dimensions)
     std::uniform_real_distribution<double> dist(0, 1);
     auto &gen = rng::getEngine();
 
-    uint64_t kf = knownFields;
-    size_t counter = 0;
-    while (kf)
-    {
-        if (kf & 0x1)
-            knowledge[counter] = dist(gen);
-        counter++;
-        kf >>= 1;
+    for(auto& s: state){
+        if(s.has_value()) s = std::make_optional(dist(gen));
     }
+
 }
 
 Editor *Editor::create(Network *network, size_t dimensions)
 {
     auto ptr = std::unique_ptr<Editor>(new Editor(dimensions));
+    spdlog::debug("Adding Editor (id: {}) to network", ptr->getId());
     network->editors.push_back(ptr.get());
     return ptr.release();
 }
