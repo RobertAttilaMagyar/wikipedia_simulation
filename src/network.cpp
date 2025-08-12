@@ -79,6 +79,12 @@ Article *Article::create(Network *network, size_t dimensions)
     return ptr.release();
 }
 
+double Article::getLimit(size_t i) const
+{
+    CHECK(knowledgeLimits.at(i).has_value(), "Knowledge-limit value cannot be accessed");
+    return knowledgeLimits.at(i).value();
+}
+
 bool Article::update(const Editor *editor)
 {
     spdlog::debug("Updating Article-{} with Editor-{}", this->getId(), editor->getId());
@@ -92,8 +98,8 @@ bool Article::update(const Editor *editor)
     }
 
     std::discrete_distribution<> dist(knowledgeDiffs.begin(), knowledgeDiffs.end());
-    std::uniform_real_distribution<double> udist(0.0,1.0);
-    auto& gen = rng::getEngine();
+    std::uniform_real_distribution<double> udist(0.0, 1.0);
+    auto &gen = rng::getEngine();
     size_t index = dist(gen);
     state.at(index) = (state.at(index).value() + std::min(knowledgeLimits.at(index).value(), udist(gen) * (knowledgeDiffs.at(index))));
     return true;
@@ -120,7 +126,7 @@ std::vector<double> Editor::getKnowledgeDiffs(const Article *article) const
     {
         if (article->knowsDomain(i) && this->knowsDomain(i))
         {
-            knowledgeDiffs.at(i) = std::max((this->getDomain(i) - article->getDomain(i)), 0.0);
+            knowledgeDiffs.at(i) = std::max((std::min(this->getDomain(i), article->getLimit(i)) - article->getDomain(i)), 0.0);
         }
     }
 

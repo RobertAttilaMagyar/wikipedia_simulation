@@ -67,6 +67,7 @@ namespace wikipedia
         static Article *create(Network *network, size_t dimensions);
 
         bool update(const Editor *editor);
+        double getLimit(size_t i) const;
         ~Article() = default;
 
     private:
