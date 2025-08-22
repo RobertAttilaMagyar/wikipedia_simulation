@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "wikipedia_module"
-version = "0.0.1"
+version = "1.0.0"
 description = "Wikipedia network evolution simulation with C++ backend"
 authors = [{name = "Robert Attila Magyar", email = "robertmagyar.023@gmail.com"}]
 readme = "README.md"
