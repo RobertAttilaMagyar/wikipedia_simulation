@@ -1,0 +1,22 @@
+[build-system]
+requires = ["scikit-build-core", "pybind11", "setuptools", "wheel"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "wikipedia_module"
+version = "0.0.1"
+description = "Wikipedia network evolution simulation with C++ backend"
+authors = [{name = "Robert Attila Magyar", email = "robertmagyar.023@gmail.com"}]
+readme = "README.md"
+license = {text = "MIT"}
+dependencies = [
+    "matplotlib",
+    "pybind11",
+    "numpy"
+]
+
+[tool.scikit-build]
+wheel.expand-macos-universal-tags = true
+
+[tool.setuptools.package-data]
+"wikipedia_module" = ["_core.pyi"]

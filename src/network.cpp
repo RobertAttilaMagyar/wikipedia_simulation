@@ -169,10 +169,11 @@ void Network::getPairs()
     if(!connections.empty())
         connections.clear();
 
-    for (auto ed : editors)
-    {
-        std::vector<double> weights(articles.size());
-        std::transform(articles.begin(), articles.end(), weights.begin(), [ed](Article *art)
+        #pragma omp parallel for
+        for (size_t i = 0; i < editors.size(); ++i) {
+            std::vector<double> weights(articles.size());   
+            Editor* ed = editors[i];
+            std::transform(articles.begin(), articles.end(), weights.begin(), [ed](Article *art)
                        { return ed->contributionMeasure(art); });
         if(std::accumulate(weights.begin(), weights.end(), 0.0) == 0)
         {
