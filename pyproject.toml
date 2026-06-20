@@ -23,5 +23,5 @@ wheel.expand-macos-universal-tags = true
 # This tells scikit-build-core to automatically include everything inside it
 wheel.packages = ["python/wikipedia_module"]
 
-[tool.scikit-build.cmake.define]
-CMAKE_TOOLCHAIN_FILE = "vcpkg/scripts/buildsystems/vcpkg.cmake"
+# [tool.scikit-build.cmake.define]
+# CMAKE_TOOLCHAIN_FILE = "vcpkg/scripts/buildsystems/vcpkg.cmake"
