@@ -1,4 +1,5 @@
 #include "network.hpp"
+#include <numeric>
 
 using namespace wikipedia;
 
@@ -18,6 +19,15 @@ const double Node::getDomain(size_t i) const
     return state.at(i).value();
 }
 
+const std::vector<double> Node::currentState() const
+{
+    std::vector<double> numericState(state.size(), 0);
+    std::transform(state.begin(), state.end(), numericState.begin(),[](const std::optional<double> x){
+        return x.value_or(0);
+    });
+    return numericState;
+}
+
 bool Node::knowsDomain(size_t i)
 {
     return state.at(i).has_value();
@@ -34,6 +44,7 @@ Node::Node(size_t dimensions)
     id = nextId++;
     state.resize(dimensions, std::nullopt);
     binomialKnownFields(prob);
+    prob = 0.5;
 }
 
 void Node::binomialKnownFields(double p)
@@ -83,8 +94,12 @@ Article *Article::create(Network *network, size_t dimensions)
 
 double Article::getLimit(size_t i) const
 {
-    CHECK(knowledgeLimits.at(i).has_value(), "Knowledge-limit value cannot be accessed");
-    return knowledgeLimits.at(i).value();
+    return knowledgeLimits.at(i).value_or(0.0);
+}
+
+std::size_t Article::numDimensions()
+{
+    return knowledgeLimits.size();
 }
 
 bool Article::update(const Editor *editor)
@@ -169,23 +184,23 @@ void Network::getPairs()
     if(!connections.empty())
         connections.clear();
 
-        #pragma omp parallel for
-        for (size_t i = 0; i < editors.size(); ++i) {
-            std::vector<double> weights(articles.size());   
-            Editor* ed = editors[i];
-            std::transform(articles.begin(), articles.end(), weights.begin(), [ed](Article *art)
-                       { return ed->contributionMeasure(art); });
-        if(std::accumulate(weights.begin(), weights.end(), 0.0) == 0)
-        {
-            spdlog::debug("Editor-{} cannot contribute to any Articles in the network.", ed->getId());
-            continue;
-        }
-        auto& gen = rng::getEngine();
-        std::discrete_distribution<> dist(weights.begin(), weights.end());
+    #pragma omp parallel for
+    for (size_t i = 0; i < editors.size(); ++i) {
+        std::vector<double> weights(articles.size());   
+        Editor* ed = editors[i];
+        std::transform(articles.begin(), articles.end(), weights.begin(), [ed](Article *art)
+                    { return ed->contributionMeasure(art); });
+    if(std::accumulate(weights.begin(), weights.end(), 0.0) == 0)
+    {
+        spdlog::debug("Editor-{} cannot contribute to any Articles in the network.", ed->getId());
+        continue;
+    }
+    auto& gen = rng::getEngine();
+    std::discrete_distribution<> dist(weights.begin(), weights.end());
 
-        Article* art = articles.at(dist(gen));
-        spdlog::debug("Editor-{} is paired to Article-{}", ed->getId(), art->getId());
-        connections.insert({ed, art});
+    Article* art = articles.at(dist(gen));
+    spdlog::debug("Editor-{} is paired to Article-{}", ed->getId(), art->getId());
+    connections.insert({ed, art});
     }
 }
 

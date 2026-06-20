@@ -5,6 +5,7 @@
 #include <rng.hpp>
 #include <stdexcept>
 #include <optional>
+#include <array>
 
 #include <algorithm>
 
@@ -46,6 +47,7 @@ namespace wikipedia
         bool knowsDomain(size_t i) const;
         const uint32_t getId();
         const uint32_t getId() const;
+        const std::vector<double> currentState() const;
 
         size_t dimensions;
 
@@ -70,6 +72,7 @@ namespace wikipedia
         double getLimit(size_t i) const;
         ~Article() = default;
 
+        std::size_t numDimensions();
     private:
         KnowledgeState knowledgeLimits;
         explicit Article(size_t dimensions);
@@ -102,6 +105,9 @@ namespace wikipedia
 
         template <class T>
         const std::vector<T *> &getNodes() const;
+
+        template <class T>
+        T* &getNodeByIdx(size_t idx); 
 
         void getPairs();
 
@@ -143,6 +149,18 @@ namespace wikipedia
     {
         Article *editor = Article::create(this, dimensions);
         return editor != nullptr;
+    }
+
+    template<>
+    inline Editor* &Network::getNodeByIdx<Editor>(size_t idx)
+    {
+        return editors.at(idx);
+    }
+
+    template<>
+    inline Article* &Network::getNodeByIdx<Article>(size_t idx)
+    {
+        return articles.at(idx);
     }
 
 }

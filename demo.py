@@ -8,7 +8,11 @@ import matplotlib.pyplot as plt
 logger = logging.getLogger(__name__)
 
 
-if __name__ == "__main__":
+def check_main():
+    pass
+
+
+def simulation_main():
     parser = argparse.ArgumentParser(prog="Demo program for wikipedia simulation", add_help=True)
     parser.add_argument("--num-editors", type=int, default=500, help = "Number of Editors in the network")
     parser.add_argument("--num-articles", type=int, default=500, help = "Number of Articles in the network")
@@ -43,5 +47,10 @@ if __name__ == "__main__":
     plt.hist([len(v) for v in result.values()])
     plt.savefig("simulation_result.png", dpi=300)
     plt.close()
+    
+
+
+if __name__ == "__main__":
+    net = Network(10, 1, 1)
     
 

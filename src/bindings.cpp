@@ -6,8 +6,7 @@
 namespace py = pybind11;
 
 PYBIND11_MODULE(_core, m)
-{   
-
+{
     py::class_<wikipedia::Network>(m, "Network")
         .def(py::init<size_t>())
         .def(py::init<size_t, uint32_t, uint32_t>())
@@ -39,6 +38,17 @@ PYBIND11_MODULE(_core, m)
                     return adjacency_map; })
 
         .def("update_articles", &wikipedia::Network::updateArticles)
+        .def("article_by_idx", &wikipedia::Network::getNodeByIdx<wikipedia::Article>)
+        .def("editor_by_idx", &wikipedia::Network::getNodeByIdx<wikipedia::Editor>)
+        ;
 
+    py::class_<wikipedia::Article>(m, "Article")
+        .def_readonly("num_dimensions", &wikipedia::Article::dimensions)
+        .def("current_state", &wikipedia::Article::currentState)
+        ;
+
+    py::class_<wikipedia::Editor>(m, "Editor")
+        .def_readonly("num_dimensions", &wikipedia::Editor::dimensions)
+        .def("current_state", &wikipedia::Editor::currentState)
         ;
 }

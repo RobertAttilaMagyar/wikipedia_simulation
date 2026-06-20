@@ -1,0 +1,18 @@
+{
+    "name": "Wikipedia Network Simulator Dev Environment",
+    "build": {
+        "dockerfile": "${localWorkspaceFolder}/docker/Dockerfile.development",
+        "context": "${localWorkspaceFolder}"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools",
+                "ms-vscode.cmake-tools",
+                "ms-python.python"
+            ]
+        }
+    },
+    "postCreateCommand": "echo 'Container is ready! Your dependencies are fully configured.'",
+    "remoteUser": "root"
+}
