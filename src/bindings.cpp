@@ -40,6 +40,8 @@ PYBIND11_MODULE(_core, m)
         .def("update_articles", &wikipedia::Network::updateArticles)
         .def("article_by_idx", &wikipedia::Network::getNodeByIdx<wikipedia::Article>)
         .def("editor_by_idx", &wikipedia::Network::getNodeByIdx<wikipedia::Editor>)
+        .def_property_readonly("num_editors", &wikipedia::Network::numNodes<wikipedia::Editor>)
+        .def_property_readonly("num_articles", &wikipedia::Network::numNodes<wikipedia::Article>)
         ;
 
     py::class_<wikipedia::Article>(m, "Article")
