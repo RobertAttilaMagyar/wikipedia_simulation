@@ -118,6 +118,9 @@ namespace wikipedia
 
         void updateArticles();
 
+        template <class T>
+        const size_t numNodes() const;
+
     private:
         NodePairs connections;
         size_t dimensions;
@@ -161,6 +164,16 @@ namespace wikipedia
     inline Article* &Network::getNodeByIdx<Article>(size_t idx)
     {
         return articles.at(idx);
+    }
+
+    template <>
+    inline const size_t Network::numNodes<Article>() const{
+        return articles.size();
+    }
+
+    template <>
+    inline const size_t Network::numNodes<Editor>() const{
+        return editors.size();
     }
 
 }
